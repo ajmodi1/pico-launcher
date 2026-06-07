@@ -10,19 +10,27 @@
 #include "themes/material/MaterialColorScheme.h"
 #include "../Theme/IRomBrowserViewFactory.h"
 #include "RomBrowserTopScreenView.h"
+#include "themes/IFontRepository.h"
+#include "rtcIpc.h"
 
 RomBrowserTopScreenView::RomBrowserTopScreenView(
     SharedPtr<RomBrowserViewModel> viewModel,
     const RomBrowserDisplayMode* displayMode,
     const IThemeFileIconFactory* themeFileIconFactory,
-    const IRomBrowserViewFactory* romBrowserViewFactory)
+    const IRomBrowserViewFactory* romBrowserViewFactory,
+const IFontRepository* fontRepository)
     : _viewModel(std::move(viewModel))
     , _themeFileIconFactory(themeFileIconFactory)
     , _fileInfoView(romBrowserViewFactory->CreateFileInfoView())
     , _showCover(displayMode->ShowCoverOnTopScreen())
     , _coverPosition(romBrowserViewFactory->GetTopCoverPosition())
+, _clockLabel(Label2DView::CreateShared(40, 16, 8, fontRepository->GetFont(FontType::Regular10)))
 {
     AddChildTail(_fileInfoView.GetPointer());
+    _clockLabel->SetPosition(214, 3);
+    _clockLabel->SetForegroundColor(Rgb<8, 8, 8>(235, 235, 240));
+    _clockLabel->SetBackgroundColor(Rgb<8, 8, 8>(12, 12, 16));
+    AddChildTail(_clockLabel.GetPointer());
 }
 
 void RomBrowserTopScreenView::InitVram(const VramContext& vramContext)
@@ -43,6 +51,26 @@ void RomBrowserTopScreenView::InitVram(const VramContext& vramContext)
 
 void RomBrowserTopScreenView::Update()
 {
+    // clock (top-right corner), refreshed about once per second
+    if ((_clockFrames++ % 60) == 0)
+    {
+        rtc_datetime_t dateTime;
+        rtc_readDateTime(&dateTime);
+        int minute = ((dateTime.time.minute >> 4) * 10) + (dateTime.time.minute & 0xF);
+        if (minute != _lastClockMinute)
+        {
+            _lastClockMinute = minute;
+            int hour = (((dateTime.time.hour >> 4) & 3) * 10) + (dateTime.time.hour & 0xF);
+            char16_t text[6];
+            text[0] = u'0' + hour / 10;
+            text[1] = u'0' + hour % 10;
+            text[2] = u':';
+            text[3] = u'0' + minute / 10;
+            text[4] = u'0' + minute % 10;
+            text[5] = 0;
+            _clockLabel->SetText(text);
+        }
+    }
         int selectedItem = _viewModel->GetSelectedItem();
     if (selectedItem != _lastSelectedItem)
 {

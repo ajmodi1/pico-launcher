@@ -446,6 +446,8 @@ void RomBrowserController::ToggleFavorite(const FileInfo& fileInfo)
                 path, sizeof(path) / sizeof(path[0])))
         {
             _favoritesStore.Toggle(path);
+            // let cached IsFavorite results (grid heart badges) revalidate
+            _favoritesVersion = _favoritesVersion + 1;
         }
         _favoriteTogglePending = false;
         return TaskResult<void>::Completed();

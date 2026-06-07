@@ -58,6 +58,10 @@ virtual VirtualFolderKind GetVirtualFolderKind() const = 0;
 virtual void ToggleFavorite(const FileInfo& fileInfo) = 0;
 virtual bool IsFavorite(const FileInfo& fileInfo) const = 0;
 
+/// @brief Returns a counter that changes whenever the favorites list changes,
+///        so cached IsFavorite results can be revalidated cheaply.
+virtual u32 GetFavoritesVersion() const = 0;
+
 virtual void ShowSearch() = 0;
 virtual void HideSearch() = 0;
 virtual void CommitSearch(const char* query) = 0;

@@ -65,6 +65,11 @@ void ToggleFavorite(const FileInfo& fileInfo) override;
 
 bool IsFavorite(const FileInfo& fileInfo) const override;
 
+u32 GetFavoritesVersion() const override
+{
+    return _favoritesVersion;
+}
+
 void ShowSearch() override;
 
 void HideSearch() override;
@@ -101,6 +106,8 @@ private:
     TCHAR _currentRealPath[256] = "/";
     char _searchQuery[32] = {0};
     bool _searchApplyPending = false;
+    // bumped whenever favorites.json changes; 0 is reserved as "not checked"
+    volatile u32 _favoritesVersion = 1;
 
     void HandleTrigger();
     void HandleNavigateTrigger();

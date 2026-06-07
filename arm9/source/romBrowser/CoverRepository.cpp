@@ -9,7 +9,7 @@
 
 static std::unique_ptr<SdFolder> LoadCoverFolder(const char* path)
 {
-        NullFileTypeProvider fileTypeProvider;
+            NullFileTypeProvider fileTypeProvider;
     auto folder = SdFolderFactory(&fileTypeProvider).CreateFromPath(path);
     if (folder)
 {
@@ -18,16 +18,28 @@ static std::unique_ptr<SdFolder> LoadCoverFolder(const char* path)
     return folder;
 }
 
+static const FileInfo* FindBmpByName(const SdFolder* folder, const char* name, char* nameBuffer, u32 bufferSize)
+{
+            if (!folder)
+                            return nullptr;
+    u32 length = StringUtil::Copy(nameBuffer, name, bufferSize - 5);
+    nameBuffer[length + 0] = '.';
+    nameBuffer[length + 1] = 'b';
+    nameBuffer[length + 2] = 'm';
+    nameBuffer[length + 3] = 'p';
+    nameBuffer[length + 4] = 0;
+    return folder->BinarySearch(nameBuffer);
+}
+
 void CoverRepository::Initialize()
 {
-        // Intentionally empty. Cover folders are loaded lazily on first use to
-    // keep startup fast and the UI responsive. See GetUserCoversFolder and
-    // GetCoverFolder.
+            // Intentionally empty. Cover folders are loaded lazily on first use to
+    // keep startup fast and the UI responsive.
 }
 
 const SdFolder* CoverRepository::GetUserCoversFolder() const
 {
-        if (!_userCoversLoaded)
+            if (!_userCoversLoaded)
 {
         _userCoversLoaded = true;
         _userCoversFolder = LoadCoverFolder("/_pico/covers/user");
@@ -35,25 +47,37 @@ const SdFolder* CoverRepository::GetUserCoversFolder() const
     return _userCoversFolder.get();
 }
 
+const SdFolder* CoverRepository::GetUserHeroesFolder() const
+{
+            if (!_userHeroesLoaded)
+{
+        _userHeroesLoaded = true;
+        _userHeroesFolder = LoadCoverFolder("/_pico/heroes/user");
+}
+    return _userHeroesFolder.get();
+}
+
+FileCover* CoverRepository::GetHeroForFile(const FileInfo& fileInfo) const
+{
+            char nameBuffer[256];
+    const FileInfo* heroFile = FindBmpByName(
+        GetUserHeroesFolder(), fileInfo.GetFileName(), nameBuffer, sizeof(nameBuffer));
+    if (heroFile)
+{
+        return new BmpFileCover(heroFile->GetFastFileRef());
+}
+    return nullptr;
+}
+
 FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const InternalFileInfo* internalFileInfo) const
 {
-        char nameBuffer[256];
+            char nameBuffer[256];
     const auto& fileType = fileInfo.GetFileType();
-    const FileInfo* coverFile = nullptr;
 
     // Try to get a cover based on the filename in the user folder.
     // This also applies to folders, so that folders can be given custom covers.
-    const SdFolder* userCoversFolder = GetUserCoversFolder();
-    if (userCoversFolder)
-{
-        u32 length = StringUtil::Copy(nameBuffer, fileInfo.GetFileName(), sizeof(nameBuffer) - 5);
-        nameBuffer[length + 0] = '.';
-        nameBuffer[length + 1] = 'b';
-        nameBuffer[length + 2] = 'm';
-        nameBuffer[length + 3] = 'p';
-        nameBuffer[length + 4] = 0;
-        coverFile = userCoversFolder->BinarySearch(nameBuffer);
-}
+    const FileInfo* coverFile = FindBmpByName(
+        GetUserCoversFolder(), fileInfo.GetFileName(), nameBuffer, sizeof(nameBuffer));
 
     if (fileType->GetClassification() != FileTypeClassification::Folder)
 {
@@ -66,15 +90,8 @@ FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const Inte
                 const char* gameCode = internalFileInfo->GetGameCode();
                 if (gameCode)
 {
-                    u32 length = StringUtil::Copy(nameBuffer, gameCode, sizeof(nameBuffer) - 5);
-                    nameBuffer[length + 0] = '.';
-                    nameBuffer[length + 1] = 'b';
-                    nameBuffer[length + 2] = 'm';
-                    nameBuffer[length + 3] = 'p';
-                    nameBuffer[length + 4] = 0;
+                    coverFile = FindBmpByName(coverFolder, gameCode, nameBuffer, sizeof(nameBuffer));
 }
-
-                coverFile = coverFolder->BinarySearch(nameBuffer);
 }
 }
 
@@ -102,7 +119,7 @@ FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const Inte
 
 const SdFolder* CoverRepository::GetCoverFolder(const char* coverFolderName) const
 {
-        if (!strcmp(coverFolderName, "nds"))
+            if (!strcmp(coverFolderName, "nds"))
 {
         if (!_ndsCoversLoaded)
 {

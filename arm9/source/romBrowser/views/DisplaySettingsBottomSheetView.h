@@ -38,15 +38,19 @@ private:
     SharedPtr<Label2DView> _layoutLabel;
     SharedPtr<Label2DView> _sortingLabel;
     // LabelView _filtersLabel;
+SharedPtr<Label2DView> _themeLabel;
+SharedPtr<Label2DView> _themeNameLabel;
 
     std::array<SharedPtr<IconButton2DView>, 4> _layoutOptions;
     std::array<SharedPtr<IconButton2DView>, /*3*/2> _sortOptions;
     // std::array<IconButton2DView, 5> _filterOptions;
+std::array<SharedPtr<IconButton2DView>, 2> _themeOptions;
 
     const MaterialColorScheme* _materialColorScheme;
 
     SharedPtr<IconButton2DView> CreateLayoutOptionIconButton();
     SharedPtr<IconButton2DView> CreateSortOptionIconButton();
+SharedPtr<IconButton2DView> CreateThemeOptionIconButton();
     // IconButton2DView CreateFilterOptionIconButton();
 
     DisplaySettingsBottomSheetView(DisplaySettingsViewModel* viewModel,
@@ -55,4 +59,5 @@ private:
     void UpdateLabels();
 
     u32 LoadIcon(IVramManager& vramManager, const unsigned int* tiles, u32 tilesLength) const;
+u32 LoadIconMirrored(IVramManager& vramManager, const unsigned int* tiles, u32 tilesLength) const;
 };

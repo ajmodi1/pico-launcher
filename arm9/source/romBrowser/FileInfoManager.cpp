@@ -10,51 +10,61 @@ FileInfoManager::FileInfoManager(std::unique_ptr<const FileInfo*[]> items, u32 i
 FileInfoManager::~FileInfoManager()
 {
     for (u32 i = 0; i < _itemCount; i++)
-    {
+{
         ReleaseFileInfo(i);
-    }
+}
 }
 
 void FileInfoManager::LoadFileInfo(int index)
 {
-    auto internalFileInfo = _extraFileInfo[index].internalFileInfo;
+        auto internalFileInfo = _extraFileInfo[index].internalFileInfo;
     if (!internalFileInfo)
-    {
+{
         internalFileInfo = _items[index]->CreateInternalFileInfo();
-    }
+}
 
     if (!_extraFileInfo[index].fileCover.Lock())
-    {
+{
         _extraFileInfo[index].fileCover = SharedPtr(_coverRepository.GetCoverForFile(*_items[index], internalFileInfo));
-    }
+}
+
+    if (!_extraFileInfo[index].fileHero.Lock())
+{
+        FileCover* hero = _coverRepository.GetHeroForFile(*_items[index]);
+        if (hero)
+{
+            _extraFileInfo[index].fileHero = SharedPtr(hero);
+}
+}
 
     _extraFileInfo[index].internalFileInfo = internalFileInfo;
 }
 
 void FileInfoManager::ReleaseFileInfo(int index)
 {
-    auto internalFileInfo = _extraFileInfo[index].internalFileInfo;
+        auto internalFileInfo = _extraFileInfo[index].internalFileInfo;
     if (internalFileInfo)
-    {
+{
         _extraFileInfo[index].internalFileInfo = nullptr;
         delete internalFileInfo;
-    }
+}
 
     _extraFileInfo[index].fileCover.Reset();
+    _extraFileInfo[index].fileHero.Reset();
 }
 
 int FileInfoManager::GetItemIndex(const char* fileName)
 {
-    if (fileName == nullptr)
-    {
+        if (fileName == nullptr)
+{
         return -1;
-    }
+}
     for (u32 i = 0; i < _itemCount; i++)
-    {
+{
         if (strcmp(fileName, _items[i]->GetFileName()) == 0)
-        {
+{
             return i;
-        }
-    }
+}
+}
     return -1;
 }

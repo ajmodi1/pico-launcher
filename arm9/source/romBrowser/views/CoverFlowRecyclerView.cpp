@@ -168,6 +168,7 @@ bool CoverFlowRecyclerView::HandleInput(const InputProvider& inputProvider, Focu
                 focusManager.Focus(_selectedItem->view);
             }
             return true;
+        }
         int selected = std::clamp(_selectedItem->itemIdx + 10 * direction, 0, (int)_itemCount - 1);
 
         focusManager.Unfocus();

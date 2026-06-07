@@ -14,14 +14,19 @@ public:
     ~FileInfoManager();
 
     const InternalFileInfo* GetInternalFileInfo(int index)
-    {
-        return _extraFileInfo[index].internalFileInfo;
-    }
+{
+            return _extraFileInfo[index].internalFileInfo;
+}
 
     SharedPtr<FileCover> GetFileCover(int index)
-    {
-        return _extraFileInfo[index].fileCover.Lock();
-    }
+{
+            return _extraFileInfo[index].fileCover.Lock();
+}
+
+    SharedPtr<FileCover> GetFileHero(int index)
+{
+            return _extraFileInfo[index].fileHero.Lock();
+}
 
     void LoadFileInfo(int index);
 
@@ -34,10 +39,11 @@ public:
 
 private:
     struct ExtraFileInfo
-    {
+{
         const InternalFileInfo* internalFileInfo;
         AtomicSharedPtr<FileCover> fileCover;
-    };
+        AtomicSharedPtr<FileCover> fileHero;
+};
 
     std::unique_ptr<const FileInfo*[]> _items;
     u32 _itemCount;

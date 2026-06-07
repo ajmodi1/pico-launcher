@@ -18,6 +18,21 @@ RomBrowserController::RomBrowserController(
     , _ioTaskQueue(ioTaskQueue), _bgTaskQueue(bgTaskQueue)
     , _fileTypeProvider(appSettingsService->GetAppSettings()) { }
 
+void RomBrowserController::NavigateUp()
+{
+    if (_virtualFolderKind != VirtualFolderKind::None)
+    {
+        // leave the virtual folder and return to the real folder we came from
+        TCHAR path[256];
+        f_getcwd(path, sizeof(path) / sizeof(path[0]));
+        NavigateToPath(path);
+    }
+    else
+    {
+        NavigateToPath("..");
+    }
+}
+
 void RomBrowserController::NavigateToPath(const TCHAR* name)
 {
     StringUtil::Copy(_navigatePath, name, sizeof(_navigatePath) / sizeof(_navigatePath[0]));
@@ -153,8 +168,22 @@ void RomBrowserController::HandleNavigateTrigger()
             }
         }
 
-        u64 startTick = gTickCounter.GetValue();
         _navigateFileName = nullptr;
+        if (!strcmp(_navigatePath, "recent:") || !strcmp(_navigatePath, "favorites:"))
+        {
+            // virtual folder built from a stored list of full file paths
+            _virtualFolderKind = _navigatePath[0] == 'r'
+                ? VirtualFolderKind::Recent : VirtualFolderKind::Favorites;
+            PathListStore& store = _virtualFolderKind == VirtualFolderKind::Recent
+                ? _recentStore : _favoritesStore;
+            store.Load();
+            SdFolderFactory sdFolderFactory { &_fileTypeProvider };
+            _newSdFolder = sdFolderFactory.CreateFromPathList(store);
+            return TaskResult<void>::Completed();
+        }
+        _virtualFolderKind = VirtualFolderKind::None;
+
+        u64 startTick = gTickCounter.GetValue();
         if (strcmp(_navigatePath, "/") != 0) // can't f_stat on root dir
         {
             FILINFO fileInfo;
@@ -190,7 +219,11 @@ void RomBrowserController::HandleLaunchTrigger()
     LOG_DEBUG("RomBrowserStateTrigger::Launch\n");
     _ioTaskQueue->Enqueue([this] (const vu8& cancelRequested)
     {
-        UpdateLastUsedFilepath();
+        if (!UpdateLastUsedFilepath())
+        {
+            LOG_ERROR("Failed to resolve full path of launched file.\n");
+            return TaskResult<void>::Completed();
+        }
         SetPicoLoaderParams();
         LoadCheats();
         return TaskResult<void>::Completed();
@@ -275,17 +308,63 @@ void RomBrowserController::HandleChangeDisplayModeTrigger()
     _romBrowserViewModel = SharedPtr<RomBrowserViewModel>::MakeShared(this);
 }
 
-void RomBrowserController::UpdateLastUsedFilepath()
+bool RomBrowserController::UpdateLastUsedFilepath()
 {
-    f_getcwd(_navigatePath, sizeof(_navigatePath) / sizeof(_navigatePath[0]));
-    int idx = strlcat(_navigatePath, "/", sizeof(_navigatePath));
-    if (_navigatePath[idx - 2] == '/')
+    if (!ResolveItemFullPath(_triggerFileInfo.GetFileName(), _navigatePath,
+            sizeof(_navigatePath) / sizeof(_navigatePath[0])))
     {
-        _navigatePath[idx - 1] = 0;
+        // guard: never save a virtual folder path as lastUsedFilePath
+        return false;
     }
-    strlcat(_navigatePath, _triggerFileInfo.GetFileName(), sizeof(_navigatePath));
     _appSettingsService->GetAppSettings().lastUsedFilePath = _navigatePath;
+    _recentStore.AddFront(_navigatePath);
     _appSettingsService->Save();
+    return true;
+}
+
+bool RomBrowserController::ResolveItemFullPath(const char* fileName, TCHAR* path, u32 pathLength)
+{
+    if (_virtualFolderKind != VirtualFolderKind::None)
+    {
+        PathListStore& store = _virtualFolderKind == VirtualFolderKind::Recent
+            ? _recentStore : _favoritesStore;
+        store.Load();
+        int index = store.IndexOfFileName(fileName);
+        if (index < 0)
+        {
+            return false;
+        }
+        StringUtil::Copy(path, store.GetPath(index), pathLength);
+        return true;
+    }
+    f_getcwd(path, pathLength);
+    int idx = strlcat(path, "/", pathLength);
+    if (path[idx - 2] == '/')
+    {
+        path[idx - 1] = 0;
+    }
+    strlcat(path, fileName, pathLength);
+    return true;
+}
+
+void RomBrowserController::ToggleFavorite(const FileInfo& fileInfo)
+{
+    _favoriteToggleFileInfo = FileInfo(fileInfo);
+    _ioTaskQueue->Enqueue([this] (const vu8& cancelRequested)
+    {
+        TCHAR path[256];
+        if (ResolveItemFullPath(_favoriteToggleFileInfo.GetFileName(), path,
+                sizeof(path) / sizeof(path[0])))
+        {
+            _favoritesStore.Toggle(path);
+        }
+        return TaskResult<void>::Completed();
+    });
+    if (_virtualFolderKind == VirtualFolderKind::Favorites)
+    {
+        // refresh the favorites view so a removed item disappears immediately
+        NavigateToPath("favorites:");
+    }
 }
 
 void RomBrowserController::SetPicoLoaderParams() const

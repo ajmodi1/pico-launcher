@@ -2,6 +2,7 @@
 #include <memory>
 #include "core/SharedPtr.h"
 #include "SdFolder.h"
+#include "PathListStore.h"
 #include "viewModels/RomBrowserViewModel.h"
 #include "RomBrowserStateMachine.h"
 #include "core/task/TaskQueue.h"
@@ -17,10 +18,7 @@ public:
     RomBrowserController(IAppSettingsService* appSettingsService,
         TaskQueueBase* ioTaskQueue, TaskQueueBase* bgTaskQueue);
 
-    void NavigateUp() override
-    {
-        NavigateToPath("..");
-    }
+    void NavigateUp() override;
 
     void NavigateToPath(const TCHAR* name) override;
     void LaunchFile(const FileInfo& fileInfo) override;
@@ -58,6 +56,13 @@ const char* GetThemeName() const override
 
 void CycleTheme(int direction) override;
 
+VirtualFolderKind GetVirtualFolderKind() const override
+{
+    return _virtualFolderKind;
+}
+
+void ToggleFavorite(const FileInfo& fileInfo) override;
+
 private:
     IAppSettingsService* _appSettingsService;
     TaskQueueBase* _ioTaskQueue;
@@ -75,13 +80,18 @@ private:
     std::unique_ptr<CoverRepository> _coverRepository;
     ExtensionFileTypeProvider _fileTypeProvider;
     std::unique_ptr<ICheatRepository> _cheatRepository;
+    PathListStore _recentStore { "/_pico/recent.json", 20 };
+    PathListStore _favoritesStore { "/_pico/favorites.json", 64 };
+    VirtualFolderKind _virtualFolderKind = VirtualFolderKind::None;
+    FileInfo _favoriteToggleFileInfo;
 
     void HandleTrigger();
     void HandleNavigateTrigger();
     void HandleFolderLoadDoneTrigger();
     void HandleLaunchTrigger();
     void HandleChangeDisplayModeTrigger();
-    void UpdateLastUsedFilepath();
+    bool UpdateLastUsedFilepath();
+    bool ResolveItemFullPath(const char* fileName, TCHAR* path, u32 pathLength);
     void SetPicoLoaderParams() const;
     void LoadCheats() const;
 };

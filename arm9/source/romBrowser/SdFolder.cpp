@@ -29,6 +29,7 @@ std::unique_ptr<const FileInfo*[]> SdFolder::FilterAndSort(
             sortedFilteredFiles[filteredCount++] = file;
         }
     }
+    if (filterSortParams.sortType != SdFolderSortType::None)
     std::sort(sortedFilteredFiles.get(), sortedFilteredFiles.get() + filteredCount,
         [filterSortParams] (const FileInfo*& a, const FileInfo*& b)
         {

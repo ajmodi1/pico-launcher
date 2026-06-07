@@ -10,6 +10,14 @@ class TaskQueueBase;
 class ICoverRepository;
 class ICheatRepository;
 
+/// @brief The kind of virtual folder the rom browser is currently showing.
+enum class VirtualFolderKind
+{
+    None,
+    Recent,
+    Favorites
+};
+
 class IRomBrowserController
 {
 public:
@@ -45,6 +53,9 @@ public:
 
 virtual const char* GetThemeName() const = 0;
 virtual void CycleTheme(int direction) = 0;
+
+virtual VirtualFolderKind GetVirtualFolderKind() const = 0;
+virtual void ToggleFavorite(const FileInfo& fileInfo) = 0;
 };
 
 inline IRomBrowserController::~IRomBrowserController() { }

@@ -64,8 +64,7 @@ void RomBrowserTopScreenView::Update()
                 _selectedFileIcon = info->CreateGameIcon();
                 if (!_selectedFileIcon)
                 {
-                    _selectedFileIcon = item.GetFileType()->CreateFileIcon("", _themeFileIconFactory);
-                }
+                    _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);                }
                 if (_selectedFileIcon)
                 {
                     _selectedFileIcon->SetAnimFrame(_viewModel->GetIconFrameCounter());
@@ -92,8 +91,7 @@ void RomBrowserTopScreenView::Update()
                 _selectedFileCover = std::move(cover);
                 _coverGraphicsUploaded = false;
 
-                _selectedFileIcon = item.GetFileType()->CreateFileIcon("", _themeFileIconFactory);
-                if (_selectedFileIcon)
+                _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);                if (_selectedFileIcon)
                 {
                     _selectedFileIcon->SetAnimFrame(_viewModel->GetIconFrameCounter());
                     _iconGraphicsUploaded = false;

@@ -57,6 +57,11 @@ virtual void CycleTheme(int direction) = 0;
 virtual VirtualFolderKind GetVirtualFolderKind() const = 0;
 virtual void ToggleFavorite(const FileInfo& fileInfo) = 0;
 virtual bool IsFavorite(const FileInfo& fileInfo) const = 0;
+
+virtual void ShowSearch() = 0;
+virtual void HideSearch() = 0;
+virtual void CommitSearch(const char* query) = 0;
+virtual const char* GetSearchQuery() const = 0;
 };
 
 inline IRomBrowserController::~IRomBrowserController() { }

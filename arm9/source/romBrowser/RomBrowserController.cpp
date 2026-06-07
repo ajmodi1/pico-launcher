@@ -20,6 +20,14 @@ RomBrowserController::RomBrowserController(
 
 void RomBrowserController::NavigateUp()
 {
+    if (_searchQuery[0])
+    {
+        // an active search filter is cleared first; B exits the search
+        // results and shows the full folder again
+        _searchQuery[0] = 0;
+        _stateMachine.Fire(RomBrowserStateTrigger::ChangeDisplayMode);
+        return;
+    }
     if (_virtualFolderKind != VirtualFolderKind::None)
     {
         // leave the virtual folder and return to the real folder we came from
@@ -34,6 +42,8 @@ void RomBrowserController::NavigateUp()
 
 void RomBrowserController::NavigateToPath(const TCHAR* name)
 {
+    // navigating anywhere resets the active search filter
+    _searchQuery[0] = 0;
     StringUtil::Copy(_navigatePath, name, sizeof(_navigatePath) / sizeof(_navigatePath[0]));
     _stateMachine.Fire(RomBrowserStateTrigger::Navigate);
 }
@@ -58,6 +68,25 @@ void RomBrowserController::HideGameInfo()
 void RomBrowserController::ShowDisplaySettings()
 {
     _stateMachine.Fire(RomBrowserStateTrigger::ShowDisplaySettings);
+}
+
+void RomBrowserController::ShowSearch()
+{
+    _stateMachine.Fire(RomBrowserStateTrigger::ShowSearch);
+}
+
+void RomBrowserController::HideSearch()
+{
+    _stateMachine.Fire(RomBrowserStateTrigger::HideSearch);
+}
+
+void RomBrowserController::CommitSearch(const char* query)
+{
+    StringUtil::Copy(_searchQuery, query, sizeof(_searchQuery));
+    // the filter is applied via ChangeDisplayMode once the sheet has closed
+    // (see the HideSearch case in HandleTrigger)
+    _searchApplyPending = true;
+    _stateMachine.Fire(RomBrowserStateTrigger::HideSearch);
 }
 
 void RomBrowserController::HideDisplaySettings()
@@ -140,6 +169,15 @@ void RomBrowserController::HandleTrigger()
 
         case RomBrowserStateTrigger::ChangeDisplayMode:
             HandleChangeDisplayModeTrigger();
+            break;
+
+        case RomBrowserStateTrigger::HideSearch:
+            if (_searchApplyPending)
+            {
+                // apply the committed query by rebuilding the browser view model
+                _searchApplyPending = false;
+                _stateMachine.Fire(RomBrowserStateTrigger::ChangeDisplayMode);
+            }
             break;
 
         default:

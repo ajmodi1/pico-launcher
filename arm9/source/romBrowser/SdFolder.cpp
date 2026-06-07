@@ -1,5 +1,6 @@
 #include "common.h"
 #include <string.h>
+#include <ctype.h>
 #include <algorithm>
 #include "SdFolder.h"
 
@@ -13,6 +14,27 @@ SdFolder::~SdFolder()
     free(_files);
 }
 
+/// @brief Case-insensitive substring check (strcasestr is not guaranteed
+///        to be available in the libc).
+static bool ContainsCaseInsensitive(const char* haystack, const char* needle)
+{
+    if (!needle[0])
+        return true;
+    for (; *haystack; haystack++)
+    {
+        const char* h = haystack;
+        const char* n = needle;
+        while (*h && *n && tolower((u8)*h) == tolower((u8)*n))
+        {
+            h++;
+            n++;
+        }
+        if (!*n)
+            return true;
+    }
+    return false;
+}
+
 std::unique_ptr<const FileInfo*[]> SdFolder::FilterAndSort(
     const SdFolderFilterSortParams& filterSortParams, int& resultCount) const
 {
@@ -24,7 +46,9 @@ std::unique_ptr<const FileInfo*[]> SdFolder::FilterAndSort(
         bool isHidden = file->GetFileName()[0] == '.' || file->IsHidden();
         auto classification = file->GetFileType()->GetClassification();
         if (classification != FileTypeClassification::Unknown &&
-            (!isHidden || filterSortParams.includeHiddenFiles))
+            (!isHidden || filterSortParams.includeHiddenFiles) &&
+            (!filterSortParams.searchFilter[0] ||
+                ContainsCaseInsensitive(file->GetFileName(), filterSortParams.searchFilter)))
         {
             sortedFilteredFiles[filteredCount++] = file;
         }

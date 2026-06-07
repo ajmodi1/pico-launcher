@@ -65,6 +65,17 @@ void ToggleFavorite(const FileInfo& fileInfo) override;
 
 bool IsFavorite(const FileInfo& fileInfo) const override;
 
+void ShowSearch() override;
+
+void HideSearch() override;
+
+void CommitSearch(const char* query) override;
+
+const char* GetSearchQuery() const override
+{
+    return _searchQuery;
+}
+
 private:
     IAppSettingsService* _appSettingsService;
     TaskQueueBase* _ioTaskQueue;
@@ -88,6 +99,8 @@ private:
     FileInfo _favoriteToggleFileInfo;
     volatile bool _favoriteTogglePending = false;
     TCHAR _currentRealPath[256] = "/";
+    char _searchQuery[32] = {0};
+    bool _searchApplyPending = false;
 
     void HandleTrigger();
     void HandleNavigateTrigger();

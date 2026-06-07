@@ -111,11 +111,63 @@ void CoverFlowRecyclerView::Draw(GraphicsContext& graphicsContext)
     Gx::MtxMode(GX_MTX_MODE_POSITION_VECTOR);
 }
 
+static char sortLetterOf(const char* name)
+{
+char c = name ? name[0] : 0;
+if (c >= 'a' && c <= 'z')
+    c -= 'a' - 'A';
+    if (c < 'A' || c > 'Z')
+        c = '#';
+    return c;
+}
+
 bool CoverFlowRecyclerView::HandleInput(const InputProvider& inputProvider, FocusManager& focusManager)
 {
     if (_itemCount != 0 && inputProvider.Triggered(InputKey::L | InputKey::R))
     {
         int direction = inputProvider.Triggered(InputKey::L) ? -1 : 1;
+        const char* selectedKey = _adapter->GetItemSortKey(_selectedItem->itemIdx);
+        if (selectedKey)
+        {
+            // jump to the previous/next first-letter group
+            char cur = sortLetterOf(selectedKey);
+            int sel = _selectedItem->itemIdx;
+            int target = sel;
+            if (direction > 0)
+            {
+                for (int i = sel + 1; i < (int)_itemCount; i++)
+                    {
+                        if (sortLetterOf(_adapter->GetItemSortKey(i)) != cur)
+                        {
+                            target = i;
+                            break;
+                        }
+                    }
+            }
+            else
+            {
+                int groupStart = sel;
+                while (groupStart > 0 && sortLetterOf(_adapter->GetItemSortKey(groupStart - 1)) == cur)
+                    groupStart--;
+                if (groupStart < sel)
+                {
+                    target = groupStart;
+                }
+                else if (groupStart > 0)
+                {
+                    char prev = sortLetterOf(_adapter->GetItemSortKey(groupStart - 1));
+                    target = groupStart - 1;
+                    while (target > 0 && sortLetterOf(_adapter->GetItemSortKey(target - 1)) == prev)
+                        target--;
+                }
+            }
+            if (target != sel)
+            {
+                focusManager.Unfocus();
+                SetSelectedItem(target, false);
+                focusManager.Focus(_selectedItem->view);
+            }
+            return true;
         int selected = std::clamp(_selectedItem->itemIdx + 10 * direction, 0, (int)_itemCount - 1);
 
         focusManager.Unfocus();

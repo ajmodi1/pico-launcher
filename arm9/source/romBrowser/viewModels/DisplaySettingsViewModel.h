@@ -38,6 +38,16 @@ public:
         }
     }
 
+const char* GetThemeName() const
+{
+    return _romBrowserController->GetThemeName();
+}
+
+void CycleTheme(int direction)
+{
+    _romBrowserController->CycleTheme(direction);
+}
+
     void Close()
     {
         _romBrowserController->HideDisplaySettings();

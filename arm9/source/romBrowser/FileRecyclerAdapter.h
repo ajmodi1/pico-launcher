@@ -14,6 +14,7 @@ class FileRecyclerAdapter : public RecyclerAdapter
 public:
     u32 GetItemCount() const override;
     void BindView(SharedPtr<View> view, int index) const override;
+const char* GetItemSortKey(int index) const override;
 
     void SetIconFrameCounter(u32 iconFrameCounter)
     {

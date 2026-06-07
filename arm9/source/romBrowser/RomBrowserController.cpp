@@ -197,6 +197,74 @@ void RomBrowserController::HandleLaunchTrigger()
     });
 }
 
+void RomBrowserController::CycleTheme(int direction)
+{
+_ioTaskQueue->Enqueue([this, direction] (const vu8& cancelRequested)
+{
+constexpr int kMaxThemes = 32;
+constexpr int kNameLength = 64;
+std::unique_ptr<char[]> names(new char[kMaxThemes * kNameLength]);
+int count = 0;
+DIR dir;
+if (f_opendir(&dir, "/_pico/themes") == FR_OK)
+{
+FILINFO entry;
+while (count < kMaxThemes && f_readdir(&dir, &entry) == FR_OK && entry.fname[0])
+{
+if (!(entry.fattrib & AM_DIR))
+    continue;
+StringUtil::Copy(&names[count * kNameLength], entry.fname, kNameLength);
+count++;
+}
+f_closedir(&dir);
+}
+if (count == 0)
+{
+return TaskResult<void>::Completed();
+}
+// sort by name for a stable cycle order
+for (int i = 0; i < count - 1; i++)
+{
+for (int j = 0; j < count - 1 - i; j++)
+{
+if (strcasecmp(&names[j * kNameLength], &names[(j + 1) * kNameLength]) > 0)
+{
+char tmp[kNameLength];
+StringUtil::Copy(tmp, &names[j * kNameLength], kNameLength);
+StringUtil::Copy(&names[j * kNameLength], &names[(j + 1) * kNameLength], kNameLength);
+StringUtil::Copy(&names[(j + 1) * kNameLength], tmp, kNameLength);
+}
+}
+}
+const char* current = _appSettingsService->GetAppSettings().theme.GetString();
+int currentIdx = 0;
+for (int i = 0; i < count; i++)
+{
+if (!strcasecmp(&names[i * kNameLength], current))
+{
+currentIdx = i;
+break;
+}
+}
+int nextIdx = (currentIdx + direction + count) % count;
+_appSettingsService->GetAppSettings().theme = &names[nextIdx * kNameLength];
+_appSettingsService->Save();
+// relaunch the launcher to apply the new theme
+auto loadParams = pload_getLoadParams();
+loadParams->savePath[0] = 0;
+loadParams->arguments[0] = 0;
+loadParams->argumentsLength = 0;
+const char* launcherPath = pload_getLauncherPath();
+if (!launcherPath || launcherPath[0] == 0)
+{
+launcherPath = "/_picoboot.nds";
+}
+StringUtil::Copy(loadParams->romPath, launcherPath, sizeof(loadParams->romPath));
+gProcessManager.Goto<PicoLoaderProcess>();
+return TaskResult<void>::Completed();
+});
+}
+
 void RomBrowserController::HandleChangeDisplayModeTrigger()
 {
     LOG_DEBUG("RomBrowserStateTrigger::ChangeDisplayMode\n");

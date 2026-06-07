@@ -50,6 +50,9 @@ void MaterialIconGridItemView::Draw(GraphicsContext& graphicsContext)
         _icon->SetPosition(6 + _position.x, 6 + _position.y);
         _icon->Draw(graphicsContext, frontColor);
     }
+
+    // heart badge on favorited games (drawn last = displayed on top)
+    DrawHeartBadge(graphicsContext, frontColor, _materialColorScheme->primary);
 }
 
 MaterialIconGridItemView::VramToken MaterialIconGridItemView::UploadGraphics(const VramContext& vramContext)
@@ -62,5 +65,5 @@ MaterialIconGridItemView::VramToken MaterialIconGridItemView::UploadGraphics(con
         dma_ntrCopy32(3, iconCell3Tiles, objVramManager->GetVramAddress(vramOffset), iconCell3TilesLen);
     }
 
-    return MaterialIconGridItemView::VramToken(vramOffset);
+    return MaterialIconGridItemView::VramToken(vramOffset, UploadHeartGraphics(vramContext));
 }

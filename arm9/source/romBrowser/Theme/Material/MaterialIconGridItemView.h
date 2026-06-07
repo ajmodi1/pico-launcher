@@ -17,6 +17,7 @@ public:
 
     void SetGraphics(const VramToken& vramToken) override
     {
+        IconGridItemView::SetGraphics(vramToken);
         _bgVramOffset = vramToken.GetVramOffset();
     }
 

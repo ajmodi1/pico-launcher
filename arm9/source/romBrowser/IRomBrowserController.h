@@ -42,6 +42,9 @@ public:
         const RomBrowserDisplaySettings& romBrowserDisplaySettings) = 0;
 
     virtual const FileInfo& GetTriggerFileInfo() const = 0;
+
+virtual const char* GetThemeName() const = 0;
+virtual void CycleTheme(int direction) = 0;
 };
 
 inline IRomBrowserController::~IRomBrowserController() { }

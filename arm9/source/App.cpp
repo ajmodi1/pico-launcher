@@ -29,7 +29,7 @@
 #include "splashTop.h"
 #include "App.h"
 
-#define SPLASH_FRAMES       44
+#define SPLASH_FRAMES       24
 
 App::App(IAppSettingsService& appSettingsService, IBgmService& bgmService)
     : _mainObjPltt(GFX_PLTT_OBJ_MAIN)
@@ -176,11 +176,9 @@ void App::Run()
 
     LOG_DEBUG("Amount of main obj vram used: %d\n", _mainObjVram.GetState());
 
-    _ioTaskQueue.Enqueue([this] (const vu8& cancelRequested)
-    {
-        _bgmService.StartBgmFromConfig();
-        return TaskResult<void>::Completed();
-    });
+    // note: background music is intentionally NOT started here; it is queued
+    // after the first folder has loaded (HandleFolderLoadDoneTrigger) so the
+    // browser gets the sd-card bandwidth first during startup
 
     _fadeAnimator = Animator(16, 0, 16, &md::sys::motion::easing::linear);
 
@@ -369,6 +367,18 @@ void App::HandleFolderLoadDoneTrigger()
     _romBrowserBottomScreenView->RomBrowserViewModelInvalidated(_mainVramContext);
     if (!_focusManager.GetCurrentFocus())
         _romBrowserBottomScreenView->Focus(_focusManager);
+
+    if (!_bgmStarted)
+    {
+        // start the music only once the first folder is up, so the browser
+        // gets the sd-card bandwidth first during startup
+        _bgmStarted = true;
+        _ioTaskQueue.Enqueue([this] (const vu8& cancelRequested)
+        {
+            _bgmService.StartBgmFromConfig();
+            return TaskResult<void>::Completed();
+        });
+    }
 }
 
 void App::HandleChangeDisplayModeTrigger(RomBrowserState newState)

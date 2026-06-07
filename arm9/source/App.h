@@ -105,6 +105,7 @@ private:
     IconButton2DView::VramToken _iconButtonViewVram;
 
     bool _vcountIrqStarted = false;
+    bool _bgmStarted = false;
 
     Point _lastTouchPoint = Point(0, 0);
 

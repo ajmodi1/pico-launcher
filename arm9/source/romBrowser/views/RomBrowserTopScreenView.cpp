@@ -31,6 +31,33 @@ const IFontRepository* fontRepository)
     _clockLabel->SetForegroundColor(Rgb<8, 8, 8>(235, 235, 240));
     _clockLabel->SetBackgroundColor(Rgb<8, 8, 8>(12, 12, 16));
     AddChildTail(_clockLabel.GetPointer());
+
+    // active search filter indicator (top-left). The top screen view is
+    // recreated whenever the browser content changes, so a static label
+    // set once here always reflects the current filter.
+    const char* searchQuery = _viewModel->GetRomBrowserController()->GetSearchQuery();
+    if (searchQuery[0])
+    {
+        _searchLabel = Label2DView::CreateShared(128, 16, 30, fontRepository->GetFont(FontType::Regular10));
+        char16_t text[32];
+        static const char16_t prefix[] = u"Search: ";
+        u32 length = 0;
+        for (; prefix[length]; length++)
+        {
+            text[length] = prefix[length];
+        }
+        for (u32 i = 0; searchQuery[i] && length < 30; i++)
+        {
+            text[length++] = (char16_t)(u8)searchQuery[i];
+        }
+        text[length] = 0;
+        _searchLabel->SetText(text);
+        _searchLabel->SetEllipsisStyle(LabelView::EllipsisStyle::Ellipsis);
+        _searchLabel->SetPosition(6, 3);
+        _searchLabel->SetForegroundColor(Rgb<8, 8, 8>(235, 235, 240));
+        _searchLabel->SetBackgroundColor(Rgb<8, 8, 8>(12, 12, 16));
+        AddChildTail(_searchLabel.GetPointer());
+    }
 }
 
 void RomBrowserTopScreenView::InitVram(const VramContext& vramContext)

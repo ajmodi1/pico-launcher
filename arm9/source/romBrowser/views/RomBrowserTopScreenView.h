@@ -42,6 +42,8 @@ private:
 SharedPtr<Label2DView> _clockLabel;
 u32 _clockFrames = 0;
 int _lastClockMinute = -1;
+// shows the active search filter (top-left); only created while one is active
+SharedPtr<Label2DView> _searchLabel;
 
     RomBrowserTopScreenView(SharedPtr<RomBrowserViewModel> viewModel,
         const RomBrowserDisplayMode* displayMode,

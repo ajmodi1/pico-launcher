@@ -24,6 +24,9 @@ public:
 
     void InitVram(const VramContext& vramContext) override;
 
+    // cover flow shows hero images on the top screen
+    bool LoadsHeroes() const override { return true; }
+
 private:
     const IRomBrowserViewFactory* _romBrowserViewFactory;
     VBlankTextureLoader* _vblankTextureLoader;

@@ -3,11 +3,13 @@
 #include "gui/views/ViewContainer.h"
 #include "BannerView.h"
 #include "gui/views/LabelView.h"
+#include "gui/views/Label2DView.h"
 #include "../FileType/FileIcon.h"
 #include "../DisplayMode/RomBrowserDisplayMode.h"
 
 class RomBrowserViewModel;
 class IRomBrowserViewFactory;
+class IFontRepository;
 
 class RomBrowserTopScreenView : public ViewContainer
 {
@@ -37,9 +39,13 @@ private:
     // flow), a hero image is shown there instead when one is available.
     bool _showHero = false;
     Point _coverPosition;
+SharedPtr<Label2DView> _clockLabel;
+u32 _clockFrames = 0;
+int _lastClockMinute = -1;
 
     RomBrowserTopScreenView(SharedPtr<RomBrowserViewModel> viewModel,
         const RomBrowserDisplayMode* displayMode,
         const IThemeFileIconFactory* themeFileIconFactory,
-        const IRomBrowserViewFactory* romBrowserViewFactory);
+        const IRomBrowserViewFactory* romBrowserViewFactory,
+const IFontRepository* fontRepository);
 };

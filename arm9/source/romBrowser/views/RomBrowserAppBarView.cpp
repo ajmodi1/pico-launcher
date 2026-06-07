@@ -41,6 +41,16 @@ RomBrowserAppBarView::RomBrowserAppBarView(
     }, _viewModel);
 }
 
+void RomBrowserAppBarView::Update()
+{
+    // the heart button doubles as a live indicator: lit while the highlighted
+    // game is in favorites.json
+    _appBarView->SetButtonState(APP_BAR_BUTTON_FAVORITE, _viewModel->IsSelectedItemFavorite()
+        ? IconButtonView::State::ToggleSelected
+        : IconButtonView::State::ToggleUnselected);
+    ViewContainer::Update();
+}
+
 void RomBrowserAppBarView::InitVram(const VramContext& vramContext)
 {
     ViewContainer::InitVram(vramContext);

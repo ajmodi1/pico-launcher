@@ -27,6 +27,13 @@ public:
             _gridCellSelectedTexVramOffset, _gridCellSelectedPlttVramOffset);
     }
 
+    IconGridItemView::VramToken UploadIconGridItemViewGraphics(const VramContext& vramContext) const override
+    {
+        // the custom theme grid cell is a 3d texture loaded in LoadResources;
+        // only the heart badge obj tiles are needed here
+        return IconGridItemView::VramToken(0, IconGridItemView::UploadHeartGraphics(vramContext));
+    }
+
     SharedPtr<BannerListItemView> CreateBannerListItemView(std::unique_ptr<RomBrowserItemViewModel> viewModel,
         VBlankTextureLoader* vblankTextureLoader) const override
     {

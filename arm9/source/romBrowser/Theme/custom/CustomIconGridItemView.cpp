@@ -51,4 +51,8 @@ void CustomIconGridItemView::Draw(GraphicsContext& graphicsContext)
         _icon->SetPosition(6 + _position.x, 6 + _position.y);
         _icon->Draw(graphicsContext, _customThemeInfo->gridIconInfo.GetBlendColor());
     }
+
+    // heart badge on favorited games (fixed warm color; custom theme cell
+    // colors are unknown so the anti-aliasing blends from a dark base)
+    DrawHeartBadge(graphicsContext, Rgb<8, 8, 8>(20, 8, 12), Rgb<8, 8, 8>(255, 96, 112));
 }

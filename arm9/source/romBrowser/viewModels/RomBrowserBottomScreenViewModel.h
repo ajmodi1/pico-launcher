@@ -20,6 +20,7 @@ public:
         return state == RomBrowserState::Browser
             || state == RomBrowserState::GameInfo
             || state == RomBrowserState::DisplaySettings
+            || state == RomBrowserState::Search
             || state == RomBrowserState::Launching;
     }
 
@@ -36,6 +37,11 @@ public:
     void NavigateUp()
     {
         _romBrowserController->NavigateUp();
+    }
+
+    void ShowSearch()
+    {
+        _romBrowserController->ShowSearch();
     }
 
 private:

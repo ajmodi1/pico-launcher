@@ -1,5 +1,6 @@
 #include "common.h"
 #include <algorithm>
+#include "core/StringUtil.h"
 #include "romBrowser/FileType/Nds/NdsFileType.h"
 #include "RomBrowserViewModel.h"
 
@@ -35,6 +36,8 @@ RomBrowserViewModel::RomBrowserViewModel(IRomBrowserController* romBrowserContro
         filterSortParams = SdFolderFilterSortParams(
             SdFolderSortType::None, SdFolderSortDirection::Ascending, false);
     }
+    StringUtil::Copy(filterSortParams.searchFilter, romBrowserController->GetSearchQuery(),
+        sizeof(filterSortParams.searchFilter));
     u64 startTick = gTickCounter.GetValue();
     const auto& sdFolder = romBrowserController->GetSdFolder();
     int filteredCount;

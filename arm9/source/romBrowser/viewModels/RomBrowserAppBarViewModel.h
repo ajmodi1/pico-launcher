@@ -30,6 +30,11 @@ public:
         _romBrowserController->NavigateToPath("favorites:");
     }
 
+    void ShowSearch()
+    {
+        _romBrowserController->ShowSearch();
+    }
+
     /// @brief Returns whether the currently highlighted item is a favorited game.
     ///        Cheap enough to call every frame (in-memory check only).
     bool IsSelectedItemFavorite()

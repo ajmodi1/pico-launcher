@@ -431,6 +431,8 @@ void App::Update()
         HandleTrigger(stateMachine.GetLastTrigger(), curState);
     }
 
+    UpdateLidSleep();
+
     bool isRomBrowserVisible = IsRomBrowserVisible();
     if (isRomBrowserVisible && !_exit && curState != RomBrowserState::Launching)
     {
@@ -450,6 +452,52 @@ void App::Update()
         _romBrowserTopScreenView->Update();
         _romBrowserController.GetRomBrowserViewModel()->SetIconFrameCounter(
             _romBrowserController.GetRomBrowserViewModel()->GetIconFrameCounter() + 1);
+    }
+}
+
+void App::UpdateLidSleep()
+{
+    // InputKey::Lid is set while the lid is OPEN (the raw KEYXY hinge bit is
+    // 1 = closed and PadInputSource inverts it), so closing the lid shows up
+    // as a key release. Only an observed open -> close transition enters
+    // sleep, so devices whose hinge always reads closed can never get stuck.
+    if (_exit || !_inputRepeater.Released(InputKey::Lid))
+    {
+        return;
+    }
+    if (_romBrowserController.GetStateMachine().GetCurrentState() == RomBrowserState::Launching)
+    {
+        // the loader is about to take over; let the game handle the lid
+        return;
+    }
+
+    // doze sleep: stop the music, switch the lcds off and ask the arm7 to cut
+    // the backlights and speaker amplifier and blink the power led. The arm7
+    // is not put into a true sleep, so sd-card io (dldi) and the io/bg
+    // threads keep working and in-flight tasks can complete safely.
+    _bgmService.StopBgm();
+    SHARED_POWER_STATE = SHARED_POWER_SLEEP;
+    VBlank::Wait();
+    REG_POWCNT &= ~POWCNT_LCD_ENABLE;
+
+    // wait (halted most of the time) until the lid opens again; abort if an
+    // exit was requested by a launch that was already in flight
+    while ((SHARED_KEY_XY & SHARED_KEY_XY_LID) && !_exit)
+    {
+        VBlank::Wait();
+    }
+
+    SHARED_POWER_STATE = 0;
+    VBlank::Wait();
+    REG_POWCNT |= POWCNT_LCD_ENABLE;
+
+    if (!_exit)
+    {
+        _ioTaskQueue.Enqueue([this] (const vu8& cancelRequested)
+        {
+            _bgmService.StartBgmFromConfig();
+            return TaskResult<void>::Completed();
+        });
     }
 }
 

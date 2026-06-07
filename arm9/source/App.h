@@ -128,6 +128,8 @@ private:
 
     bool IsRomBrowserVisible() const;
 
+    void UpdateLidSleep();
+
     void MainLoop();
     void Update();
     void Draw();

@@ -27,49 +27,50 @@ RomBrowserTopScreenView::RomBrowserTopScreenView(
 
 void RomBrowserTopScreenView::InitVram(const VramContext& vramContext)
 {
-    ViewContainer::InitVram(vramContext);
+        ViewContainer::InitVram(vramContext);
     int tileIndex = 0;
     vu16* mapPtr = (vu16*)((u8*)GFX_BG_SUB + 0x3800);
     for (int y = 0; y < 12; y++)
-    {
+{
         for (int x = 0; x < 14; x++)
-        {
+{
             *mapPtr++ = tileIndex;
             tileIndex++;
-        }
+}
         mapPtr += 2;
-    }
+}
 }
 
 void RomBrowserTopScreenView::Update()
 {
-    int selectedItem = _viewModel->GetSelectedItem();
+        int selectedItem = _viewModel->GetSelectedItem();
     if (selectedItem != _lastSelectedItem)
-    {
+{
         auto& fileInfoManager = _viewModel->GetFileInfoManager();
         const auto& item = fileInfoManager.GetItem(selectedItem);
         if (item.GetFileType()->HasInternalFileInfo())
-        {
+{
             auto info = fileInfoManager.GetInternalFileInfo(selectedItem);
             if (info)
-            {
+{
                 bool fileNameAsTitle = true;
                 const char16_t* gameTitle = info->GetGameTitle();
                 if (gameTitle)
-                {
+{
                     _fileInfoView->SetGameTitleAsync(_viewModel->GetBgTaskQueue(), gameTitle);
                     fileNameAsTitle = false;
-                }
+}
 
                 _selectedFileIcon = info->CreateGameIcon();
                 if (!_selectedFileIcon)
-                {
-                    _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);                }
+{
+                    _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);
+}
                 if (_selectedFileIcon)
-                {
+{
                     _selectedFileIcon->SetAnimFrame(_viewModel->GetIconFrameCounter());
                     _iconGraphicsUploaded = false;
-                }
+}
                 _fileInfoView->SetIcon(std::move(_selectedFileIcon));
                 _fileInfoView->SetFileNameAsync(_viewModel->GetBgTaskQueue(), item.GetFileName(), fileNameAsTitle);
 
@@ -77,58 +78,93 @@ void RomBrowserTopScreenView::Update()
 
                 auto cover = fileInfoManager.GetFileCover(selectedItem);
                 if (cover.IsValid())
-                {
+{
                     _selectedFileCover = std::move(cover);
                     _coverGraphicsUploaded = false;
-                }
-            }
-        }
+}
+
+                // In cover flow mode, show a hero image on the top screen when available.
+                if (!_showCover)
+{
+                    auto hero = fileInfoManager.GetFileHero(selectedItem);
+                    if (hero.IsValid() && hero->IsActualCover())
+{
+                        _selectedFileCover = std::move(hero);
+                        _coverGraphicsUploaded = false;
+                        _showHero = true;
+}
+                    else
+{
+                        _showHero = false;
+}
+}
+}
+}
         else
-        {
+{
             auto cover = fileInfoManager.GetFileCover(selectedItem);
             if (cover.IsValid())
-            {
+{
                 _selectedFileCover = std::move(cover);
                 _coverGraphicsUploaded = false;
 
-                _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);                if (_selectedFileIcon)
-                {
+                _selectedFileIcon = item.GetFileType()->CreateFileIcon(item.GetFileName(), _themeFileIconFactory);
+                if (_selectedFileIcon)
+{
                     _selectedFileIcon->SetAnimFrame(_viewModel->GetIconFrameCounter());
                     _iconGraphicsUploaded = false;
-                }
+}
                 _fileInfoView->SetIcon(std::move(_selectedFileIcon));
                 _fileInfoView->SetFileNameAsync(_viewModel->GetBgTaskQueue(), item.GetFileName(), true);
 
                 _lastSelectedItem = selectedItem;
-            }
-        }
-    }
+
+                // In cover flow mode, show a hero image on the top screen when available.
+                if (!_showCover)
+{
+                    auto hero = fileInfoManager.GetFileHero(selectedItem);
+                    if (hero.IsValid() && hero->IsActualCover())
+{
+                        _selectedFileCover = std::move(hero);
+                        _coverGraphicsUploaded = false;
+                        _showHero = true;
+}
+                    else
+{
+                        _showHero = false;
+}
+}
+}
+}
+}
     ViewContainer::Update();
 }
 
 void RomBrowserTopScreenView::VBlank()
 {
-    ViewContainer::VBlank();
+        ViewContainer::VBlank();
+
+    bool showCoverOrHero = _showCover || _showHero;
 
     if (!_coverGraphicsUploaded && _selectedFileCover.IsValid())
-    {
-        if (_showCover && _selectedFileCover->IsActualCover())
-        {
+{
+        if (showCoverOrHero && _selectedFileCover->IsActualCover())
+{
             _selectedFileCover->Upload2DCoverBitmap((u8*)GFX_BG_SUB + 0x4000);
             mem_setVramHMapping(MEM_VRAM_H_LCDC);
             _selectedFileCover->Upload2DCoverPalette((void*)0x0689E000);
             GFX_PLTT_BG_SUB[0] = *(vu16*)0x0689E000;
             mem_setVramHMapping(MEM_VRAM_H_SUB_BG_EXT_PLTT_SLOT_0123);
-        }
+}
         _coverGraphicsUploaded = true;
-    }
-    if (!_showCover || !_selectedFileCover.IsValid() || !_selectedFileCover->IsActualCover())
-    {
+}
+    if (!showCoverOrHero || !_selectedFileCover.IsValid() || !_selectedFileCover->IsActualCover())
+{
         // hide cover
         REG_DISPCNT_SUB &= ~(((1 << 3) | (1 << 5)) << 8);
-    }
+}
     else
-    {
+{
         // display cover
         REG_BG3PA_SUB = 0x100;
         REG_BG3PB_SUB = 0;
@@ -141,10 +177,10 @@ void RomBrowserTopScreenView::VBlank()
         gfx_setSubWindow0(_coverPosition.x, _coverPosition.y, _coverPosition.x + 106, _coverPosition.y + 96);
         REG_WININ_SUB = 0x002A;
         REG_WINOUT_SUB = ~(1 << 3);
-    }
+}
     if (!_iconGraphicsUploaded)
-    {
+{
         _fileInfoView->UploadIconGraphics();
         _iconGraphicsUploaded = true;
-    }
+}
 }

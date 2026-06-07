@@ -152,7 +152,49 @@ static void initializeArm7()
 
     touch_init();
 
+    SHARED_POWER_STATE = 0;
+
     ipc_setArm7SyncBits(7);
+}
+
+/// @brief Applies the sleep state requested by the arm9 through SHARED_POWER_STATE.
+///        Runs on the main thread (same thread as the touch screen spi transfers,
+///        so the pmic spi accesses cannot collide with them).
+static void updateSleepState()
+{
+    static u8 sAppliedSleepState = 0;
+    static u8 sSavedDsiBacklight = 0;
+
+    u8 requested = SHARED_POWER_STATE & SHARED_POWER_SLEEP;
+    if (requested == sAppliedSleepState)
+    {
+        return;
+    }
+    sAppliedSleepState = requested;
+    if (requested)
+    {
+        if (isDSiMode())
+        {
+            // on dsi the backlight brightness is controlled by the mcu
+            sSavedDsiBacklight = mcu_readReg(MCU_REG_BACKLIGHT);
+            mcu_writeReg(MCU_REG_BACKLIGHT, 0);
+        }
+        pmic_setTopBacklightEnable(false);
+        pmic_setBottomBacklightEnable(false);
+        pmic_setAmplifierEnable(false);
+        pmic_setPowerLedBlink(PMIC_CONTROL_POWER_LED_BLINK_SLOW);
+    }
+    else
+    {
+        pmic_setPowerLedBlink(PMIC_CONTROL_POWER_LED_BLINK_NONE);
+        pmic_setAmplifierEnable(true);
+        pmic_setTopBacklightEnable(true);
+        pmic_setBottomBacklightEnable(true);
+        if (isDSiMode())
+        {
+            mcu_writeReg(MCU_REG_BACKLIGHT, sSavedDsiBacklight);
+        }
+    }
 }
 
 static void updateArm7IdleState()
@@ -237,6 +279,7 @@ int main()
             SHARED_TOUCH_Y = touchPos.py;
         }
         SHARED_KEY_XY = keys;
+        updateSleepState();
         updateArm7();
     }
 

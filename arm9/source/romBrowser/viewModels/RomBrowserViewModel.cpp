@@ -29,6 +29,12 @@ RomBrowserViewModel::RomBrowserViewModel(IRomBrowserController* romBrowserContro
             break;
         }
     }
+    if (romBrowserController->GetVirtualFolderKind() == VirtualFolderKind::Recent)
+    {
+        // keep the stored order: most recently played first
+        filterSortParams = SdFolderFilterSortParams(
+            SdFolderSortType::None, SdFolderSortDirection::Ascending, false);
+    }
     u64 startTick = gTickCounter.GetValue();
     const auto& sdFolder = romBrowserController->GetSdFolder();
     int filteredCount;

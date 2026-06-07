@@ -18,6 +18,16 @@ public:
         _romBrowserController->ShowDisplaySettings();
     }
 
+    void ShowRecent()
+    {
+        _romBrowserController->NavigateToPath("recent:");
+    }
+
+    void ShowFavorites()
+    {
+        _romBrowserController->NavigateToPath("favorites:");
+    }
+
     constexpr RomBrowserLayout GetRomBrowserLayout() const
     {
         return _romBrowserController->GetRomBrowserDisplaySettings().layout;

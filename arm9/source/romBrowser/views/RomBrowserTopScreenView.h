@@ -19,9 +19,9 @@ public:
     void VBlank() override;
 
     Rectangle GetBounds() const override
-    {
-        return Rectangle(0, 0, 256, 192);
-    }
+{
+            return Rectangle(0, 0, 256, 192);
+}
 
 private:
     SharedPtr<RomBrowserViewModel> _viewModel;
@@ -33,6 +33,9 @@ private:
     bool _iconGraphicsUploaded = false;
     bool _coverGraphicsUploaded = false;
     bool _showCover;
+    // When the display mode does not show the cover on the top screen (cover
+    // flow), a hero image is shown there instead when one is available.
+    bool _showHero = false;
     Point _coverPosition;
 
     RomBrowserTopScreenView(SharedPtr<RomBrowserViewModel> viewModel,

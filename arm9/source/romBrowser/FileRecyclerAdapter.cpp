@@ -25,7 +25,7 @@ void FileRecyclerAdapter::BindView(SharedPtr<View> view, int index) const
         }
 
         LOG_DEBUG("Started task to load %d\n", index);
-        _fileInfoManager->LoadFileInfo(index);
+        _fileInfoManager->LoadFileInfo(index, LoadsHeroes());
         auto internalFileInfo = _fileInfoManager->GetInternalFileInfo(index);
         if (cancelRequested)
         {

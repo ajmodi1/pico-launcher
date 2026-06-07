@@ -15,7 +15,7 @@ FileInfoManager::~FileInfoManager()
 }
 }
 
-void FileInfoManager::LoadFileInfo(int index)
+void FileInfoManager::LoadFileInfo(int index, bool loadHero)
 {
         auto internalFileInfo = _extraFileInfo[index].internalFileInfo;
     if (!internalFileInfo)
@@ -28,7 +28,7 @@ void FileInfoManager::LoadFileInfo(int index)
         _extraFileInfo[index].fileCover = SharedPtr(_coverRepository.GetCoverForFile(*_items[index], internalFileInfo));
 }
 
-    if (!_extraFileInfo[index].fileHero.Lock())
+    if (loadHero && !_extraFileInfo[index].fileHero.Lock())
 {
         FileCover* hero = _coverRepository.GetHeroForFile(*_items[index]);
         if (hero)

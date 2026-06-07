@@ -28,7 +28,11 @@ public:
             return _extraFileInfo[index].fileHero.Lock();
 }
 
-    void LoadFileInfo(int index);
+    /// @brief Loads the internal file info and cover for the given item.
+    /// @param loadHero Also load the hero image. Heroes are only displayed in
+    ///        cover flow mode, so grid/list binds skip them to halve the sd-card
+    ///        io per item while scrolling.
+    void LoadFileInfo(int index, bool loadHero = true);
 
     void ReleaseFileInfo(int index);
 

@@ -23,6 +23,11 @@ const char* GetItemSortKey(int index) const override;
 
     virtual void InitVram(const VramContext& vramContext) { }
 
+    /// @brief Whether binding an item should also load its hero image. Heroes
+    ///        are only shown in cover flow mode, so loading them for grid/list
+    ///        binds would waste sd-card io on every scroll.
+    virtual bool LoadsHeroes() const { return false; }
+
 protected:
     IRomBrowserController* _romBrowserController;
     FileInfoManager* _fileInfoManager;

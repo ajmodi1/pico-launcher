@@ -195,15 +195,9 @@ void RomBrowserController::HandleNavigateTrigger()
             _coverRepository = std::make_unique<CoverRepository>();
             _coverRepository->Initialize();
         }
-        if (!_cheatRepository)
-        {
-            _cheatRepository = UsrCheatRepositoryFactory().FromUsrCheatDat("/_pico/usrcheat.dat");
-            if (!_cheatRepository)
-            {
-                // When usrcheat.dat is not found or cannot be read use a dummy empty cheat repository
-                _cheatRepository = std::make_unique<EmptyCheatRepository>();
-            }
-        }
+        // note: the cheat repository is intentionally NOT created here; parsing the
+        // usrcheat.dat index can take a while with a multi-megabyte database, so it
+        // is loaded lazily by GetCheatRepository on first use (cheats sheet/launch)
 
         _navigateFileName = nullptr;
         if (!strcmp(_navigatePath, "recent:") || !strcmp(_navigatePath, "favorites:"))
@@ -475,9 +469,27 @@ void RomBrowserController::SetPicoLoaderParams() const
     }
 }
 
+const ICheatRepository& RomBrowserController::GetCheatRepository() const
+{
+    // Lazily created on first use so the (potentially slow) usrcheat.dat index
+    // parse never delays startup. All callers run on the io thread (the cheats
+    // sheet io task, the cheat save io task and the launch io task), so this
+    // lazy initialization cannot race.
+    if (!_cheatRepository)
+    {
+        _cheatRepository = UsrCheatRepositoryFactory().FromUsrCheatDat("/_pico/usrcheat.dat");
+        if (!_cheatRepository)
+        {
+            // When usrcheat.dat is not found or cannot be read use a dummy empty cheat repository
+            _cheatRepository = std::make_unique<EmptyCheatRepository>();
+        }
+    }
+    return *_cheatRepository;
+}
+
 void RomBrowserController::LoadCheats() const
 {
-    auto cheats = _cheatRepository->GetCheatsForGame(_triggerFileInfo.GetFastFileRef());
+    auto cheats = GetCheatRepository().GetCheatsForGame(_triggerFileInfo.GetFastFileRef());
     auto cheatData = PicoLoaderCheatDataFactory().CreateCheatData(cheats);
     pload_setCheatData(cheatData);
 }

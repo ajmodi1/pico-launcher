@@ -38,7 +38,11 @@ public:
     TaskQueueBase* GetIoTaskQueue() const override { return _ioTaskQueue; }
     TaskQueueBase* GetBgTaskQueue() const override { return _bgTaskQueue; }
     const ICoverRepository& GetCoverRepository() const override { return *_coverRepository; }
-    const ICheatRepository& GetCheatRepository() const override { return *_cheatRepository; }
+
+    /// @brief Returns the cheat repository, creating it on first use. Parsing the
+    ///        usrcheat.dat index can take a while with a multi-megabyte database, so
+    ///        it must not run during startup. Only call this from the io thread.
+    const ICheatRepository& GetCheatRepository() const override;
 
     void SetRomBrowserDisplaySettings(const RomBrowserDisplaySettings& romBrowserDisplaySettings) override;
 
@@ -97,7 +101,8 @@ private:
     bool _saveSettingsPending = false;
     std::unique_ptr<CoverRepository> _coverRepository;
     ExtensionFileTypeProvider _fileTypeProvider;
-    std::unique_ptr<ICheatRepository> _cheatRepository;
+    // lazily created by GetCheatRepository (io thread only)
+    mutable std::unique_ptr<ICheatRepository> _cheatRepository;
     PathListStore _recentStore { "/_pico/recent.json", 20 };
     PathListStore _favoritesStore { "/_pico/favorites.json", 64 };
     VirtualFolderKind _virtualFolderKind = VirtualFolderKind::None;

@@ -8,6 +8,11 @@ u32 FileRecyclerAdapter::GetItemCount() const
     return _fileInfoManager->GetItemCount();
 }
 
+const char* FileRecyclerAdapter::GetItemSortKey(int index) const
+{
+return _fileInfoManager->GetItem(index).GetFileName();
+}
+
 void FileRecyclerAdapter::BindView(SharedPtr<View> view, int index) const
 {
     LOG_DEBUG("Binding %d\n", index);

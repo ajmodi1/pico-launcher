@@ -117,7 +117,8 @@ bool RomBrowserBottomScreenView::HandleInput(const InputProvider& inputProvider,
     {
         // jump to a random game in the current folder
         const auto& romBrowserViewModel = _viewModel->GetRomBrowserViewModel();
-        if (romBrowserViewModel.IsValid())
+        if (romBrowserViewModel.IsValid() &&
+            romBrowserViewModel->GetRomBrowserController()->GetVirtualFolderKind() == VirtualFolderKind::None)
         {
             auto& fileInfoManager = romBrowserViewModel->GetFileInfoManager();
             u32 itemCount = fileInfoManager.GetItemCount();
@@ -150,6 +151,25 @@ bool RomBrowserBottomScreenView::HandleInput(const InputProvider& inputProvider,
                         }
                         pick--;
                     }
+            }
+        }
+        return true;
+    }
+    if (inputProvider.Triggered(InputKey::Select) && _viewModel->IsRomBrowserVisible())
+    {
+        // toggle favorite status of the highlighted game
+        const auto& romBrowserViewModel = _viewModel->GetRomBrowserViewModel();
+        if (romBrowserViewModel.IsValid())
+        {
+            int selectedItem = romBrowserViewModel->GetSelectedItem();
+            if (selectedItem >= 0 &&
+                selectedItem < (int)romBrowserViewModel->GetFileInfoManager().GetItemCount())
+            {
+                const auto& item = romBrowserViewModel->GetFileInfoManager().GetItem(selectedItem);
+                if (item.GetFileType()->GetClassification() == FileTypeClassification::Game)
+                {
+                    romBrowserViewModel->GetRomBrowserController()->ToggleFavorite(item);
+                }
             }
         }
         return true;

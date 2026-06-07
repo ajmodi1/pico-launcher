@@ -11,10 +11,7 @@ public:
     static const FolderFileType sInstance;
 
     std::unique_ptr<FileIcon> CreateFileIcon(const TCHAR* fileName,
-        const IThemeFileIconFactory* themeFileIconFactory) const override
-    {
-        return themeFileIconFactory->CreateFolderIcon(fileName);
-    }
+        const IThemeFileIconFactory* themeFileIconFactory) const override;
 
     FileCover* CreateFileCover(const TCHAR* fileName) const override
     {

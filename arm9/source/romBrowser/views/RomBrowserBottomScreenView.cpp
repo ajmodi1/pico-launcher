@@ -1,6 +1,7 @@
 #include "common.h"
 #include "../viewModels/RomBrowserViewModel.h"
 #include "../views/IconGridItemView.h"
+#include "../FileType/FileType.h"
 #include "gui/GraphicsContext.h"
 #include "backIcon.h"
 #include "settingsIcon.h"
@@ -110,6 +111,47 @@ bool RomBrowserBottomScreenView::HandleInput(const InputProvider& inputProvider,
     if (inputProvider.Triggered(InputKey::B))
     {
         _viewModel->NavigateUp();
+        return true;
+    }
+    if (inputProvider.Triggered(InputKey::X) && _viewModel->IsRomBrowserVisible())
+    {
+        // jump to a random game in the current folder
+        const auto& romBrowserViewModel = _viewModel->GetRomBrowserViewModel();
+        if (romBrowserViewModel.IsValid())
+        {
+            auto& fileInfoManager = romBrowserViewModel->GetFileInfoManager();
+            u32 itemCount = fileInfoManager.GetItemCount();
+            u32 gameCount = 0;
+            for (u32 i = 0; i < itemCount; i++)
+                {
+                    if (fileInfoManager.GetItem(i).GetFileType()->GetClassification() == FileTypeClassification::Game)
+                        gameCount++;
+                }
+            if (gameCount > 0)
+            {
+                u32 pick = gRandomGenerator->NextU32(gameCount);
+                for (u32 i = 0; i < itemCount; i++)
+                    {
+                        const auto& item = fileInfoManager.GetItem(i);
+                        if (item.GetFileType()->GetClassification() != FileTypeClassification::Game)
+                            continue;
+                        if (pick == 0)
+                        {
+                            TCHAR path[256];
+                            f_getcwd(path, sizeof(path) / sizeof(path[0]));
+                            int len = strlcat(path, "/", sizeof(path));
+                            if (len >= 2 && path[len - 2] == '/')
+                            {
+                                path[len - 1] = 0;
+                            }
+                            strlcat(path, item.GetFileName(), sizeof(path));
+                            romBrowserViewModel->GetRomBrowserController()->NavigateToPath(path);
+                            break;
+                        }
+                        pick--;
+                    }
+            }
+        }
         return true;
     }
     return View::HandleInput(inputProvider, focusManager);

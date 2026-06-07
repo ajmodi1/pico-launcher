@@ -4,6 +4,23 @@
 #include "romBrowser/FileType/Nds/NdsFileType.h"
 #include "RomBrowserItemViewModel.h"
 
+bool RomBrowserItemViewModel::IsFavorite()
+{
+    if (_index < 0)
+    {
+        return false;
+    }
+    u32 version = _romBrowserController->GetFavoritesVersion();
+    if (version != _checkedFavoritesVersion)
+    {
+        _checkedFavoritesVersion = version;
+        const auto& item = _romBrowserController->GetRomBrowserViewModel()->GetFileInfoManager().GetItem(_index);
+        _isFavorite = item.GetFileType()->GetClassification() == FileTypeClassification::Game
+            && _romBrowserController->IsFavorite(item);
+    }
+    return _isFavorite;
+}
+
 void RomBrowserItemViewModel::Activate()
 {
     if (_index >= 0)

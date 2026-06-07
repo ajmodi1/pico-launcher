@@ -13,6 +13,12 @@ public:
     /// @return The total number of items in this adapter.
     virtual u32 GetItemCount() const = 0;
 
+/// @brief Returns a sort key (display name) for the item at the given index,
+///        or nullptr when not supported by this adapter.
+/// @param index The item index.
+/// @return The sort key for the item, or nullptr.
+virtual const char* GetItemSortKey(int index) const { return nullptr; }
+
     /// @brief Returns the size of each view of this adapter.
     /// @param width Returns the with of the view.
     /// @param height Returns the height of the view.

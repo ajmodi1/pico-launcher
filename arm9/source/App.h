@@ -21,6 +21,7 @@
 #include "themes/material/MaterialColorScheme.h"
 #include "romBrowser/viewModels/RomBrowserBottomScreenViewModel.h"
 #include "romBrowser/viewModels/DisplaySettingsViewModel.h"
+#include "romBrowser/viewModels/SearchViewModel.h"
 #include "romBrowser/views/RomBrowserBottomScreenView.h"
 #include "romBrowser/views/RomBrowserTopScreenView.h"
 #include "romBrowser/views/IconButton2DView.h"
@@ -88,6 +89,8 @@ private:
 
     DisplaySettingsViewModel _displaySettingsBottomSheetViewModel;
 
+    SearchViewModel _searchViewModel;
+
     FocusManager _focusManager;
 
     std::unique_ptr<MaterialThemeFileIconFactory> _materialThemeFileIconFactory;
@@ -117,6 +120,8 @@ private:
     void HandleHideGameInfoTrigger();
     void HandleShowDisplaySettingsTrigger();
     void HandleHideDisplaySettingsTrigger();
+    void HandleShowSearchTrigger();
+    void HandleHideSearchTrigger();
     void HandleNavigateTrigger();
     void HandleFolderLoadDoneTrigger();
     void HandleChangeDisplayModeTrigger(RomBrowserState newState);

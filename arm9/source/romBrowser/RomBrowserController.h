@@ -63,6 +63,8 @@ VirtualFolderKind GetVirtualFolderKind() const override
 
 void ToggleFavorite(const FileInfo& fileInfo) override;
 
+bool IsFavorite(const FileInfo& fileInfo) const override;
+
 private:
     IAppSettingsService* _appSettingsService;
     TaskQueueBase* _ioTaskQueue;
@@ -84,6 +86,8 @@ private:
     PathListStore _favoritesStore { "/_pico/favorites.json", 64 };
     VirtualFolderKind _virtualFolderKind = VirtualFolderKind::None;
     FileInfo _favoriteToggleFileInfo;
+    volatile bool _favoriteTogglePending = false;
+    TCHAR _currentRealPath[256] = "/";
 
     void HandleTrigger();
     void HandleNavigateTrigger();
@@ -91,7 +95,8 @@ private:
     void HandleLaunchTrigger();
     void HandleChangeDisplayModeTrigger();
     bool UpdateLastUsedFilepath();
-    bool ResolveItemFullPath(const char* fileName, TCHAR* path, u32 pathLength);
+    bool ResolveItemFullPath(const char* fileName, u32 startCluster, TCHAR* path, u32 pathLength);
+    static void JoinPath(const TCHAR* dir, const char* fileName, TCHAR* path, u32 pathLength);
     void SetPicoLoaderParams() const;
     void LoadCheats() const;
 };

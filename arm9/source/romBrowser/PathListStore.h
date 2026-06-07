@@ -15,6 +15,10 @@ public:
     /// @brief Loads the list from the sd card if it hasn't been loaded yet.
     void Load();
 
+    /// @brief Returns whether Load() has completed. Safe to call from the UI
+    ///        thread; while false the list must not be read.
+    bool IsLoaded() const { return _loaded; }
+
     /// @brief Inserts the path at the front of the list (moving it there if it
     ///        is already present) and trims the list to maxEntries. Saves the list.
     void AddFront(const char* path);
@@ -27,7 +31,17 @@ public:
     /// @brief Finds the index of the entry whose file name (last path segment)
     ///        matches the given file name.
     /// @return The index of the matching entry, or -1 when not found.
-    int IndexOfFileName(const char* fileName) const;
+    int IndexOfFileName(const char* fileName) const
+    {
+        return IndexOfFileName(fileName, 0);
+    }
+
+    /// @brief Finds the index of the next entry at or after fromIndex whose file
+    ///        name (last path segment) matches the given file name.
+    /// @return The index of the matching entry, or -1 when not found.
+    int IndexOfFileName(const char* fileName, int fromIndex) const;
+
+    bool Contains(const char* path) const { return IndexOf(path) >= 0; }
 
     int GetCount() const { return _count; }
     const char* GetPath(int index) const { return &_paths[index * kPathLength]; }
@@ -36,9 +50,11 @@ private:
     const char* _filePath;
     int _maxEntries;
     int _count = 0;
-    bool _loaded = false;
+    volatile bool _loaded = false;
+    bool _loadStarted = false;
     std::unique_ptr<char[]> _paths;
 
+    void ReadFromFile();
     int IndexOf(const char* path) const;
     void RemoveAt(int index);
     void Save() const;

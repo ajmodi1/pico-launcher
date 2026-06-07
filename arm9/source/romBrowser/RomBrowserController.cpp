@@ -23,9 +23,8 @@ void RomBrowserController::NavigateUp()
     if (_virtualFolderKind != VirtualFolderKind::None)
     {
         // leave the virtual folder and return to the real folder we came from
-        TCHAR path[256];
-        f_getcwd(path, sizeof(path) / sizeof(path[0]));
-        NavigateToPath(path);
+        // (_currentRealPath is cached so the UI thread never touches the sd card)
+        NavigateToPath(_currentRealPath);
     }
     else
     {
@@ -177,11 +176,13 @@ void RomBrowserController::HandleNavigateTrigger()
             PathListStore& store = _virtualFolderKind == VirtualFolderKind::Recent
                 ? _recentStore : _favoritesStore;
             store.Load();
+            _favoritesStore.Load(); // also needed for the heart indicator
             SdFolderFactory sdFolderFactory { &_fileTypeProvider };
             _newSdFolder = sdFolderFactory.CreateFromPathList(store);
             return TaskResult<void>::Completed();
         }
         _virtualFolderKind = VirtualFolderKind::None;
+        _favoritesStore.Load(); // no-op after the first navigation
 
         u64 startTick = gTickCounter.GetValue();
         if (strcmp(_navigatePath, "/") != 0) // can't f_stat on root dir
@@ -198,6 +199,7 @@ void RomBrowserController::HandleNavigateTrigger()
             }
         }
         f_chdir(_navigatePath);
+        f_getcwd(_currentRealPath, sizeof(_currentRealPath) / sizeof(_currentRealPath[0]));
         SdFolderFactory sdFolderFactory { &_fileTypeProvider };
         _newSdFolder = sdFolderFactory.CreateFromPath(".");
         u64 endTick = gTickCounter.GetValue();
@@ -310,7 +312,8 @@ void RomBrowserController::HandleChangeDisplayModeTrigger()
 
 bool RomBrowserController::UpdateLastUsedFilepath()
 {
-    if (!ResolveItemFullPath(_triggerFileInfo.GetFileName(), _navigatePath,
+    if (!ResolveItemFullPath(_triggerFileInfo.GetFileName(),
+            _triggerFileInfo.GetFastFileRef().GetStartCluster(), _navigatePath,
             sizeof(_navigatePath) / sizeof(_navigatePath[0])))
     {
         // guard: never save a virtual folder path as lastUsedFilePath
@@ -322,42 +325,91 @@ bool RomBrowserController::UpdateLastUsedFilepath()
     return true;
 }
 
-bool RomBrowserController::ResolveItemFullPath(const char* fileName, TCHAR* path, u32 pathLength)
+bool RomBrowserController::ResolveItemFullPath(const char* fileName, u32 startCluster, TCHAR* path, u32 pathLength)
 {
     if (_virtualFolderKind != VirtualFolderKind::None)
     {
         PathListStore& store = _virtualFolderKind == VirtualFolderKind::Recent
             ? _recentStore : _favoritesStore;
         store.Load();
-        int index = store.IndexOfFileName(fileName);
-        if (index < 0)
+        // verify candidates by start cluster so identical file names in
+        // different folders can't resolve to the wrong game
+        int firstMatch = -1;
+        FILINFO fileInfo;
+        for (int index = store.IndexOfFileName(fileName); index >= 0;
+             index = store.IndexOfFileName(fileName, index + 1))
+        {
+            if (firstMatch < 0)
+            {
+                firstMatch = index;
+            }
+            if (f_stat(store.GetPath(index), &fileInfo) == FR_OK &&
+                fileInfo.fclust == startCluster)
+            {
+                StringUtil::Copy(path, store.GetPath(index), pathLength);
+                return true;
+            }
+        }
+        if (firstMatch < 0)
         {
             return false;
         }
-        StringUtil::Copy(path, store.GetPath(index), pathLength);
+        // file changed on disk since the list was built; fall back to the name match
+        StringUtil::Copy(path, store.GetPath(firstMatch), pathLength);
         return true;
     }
-    f_getcwd(path, pathLength);
+    JoinPath(_currentRealPath, fileName, path, pathLength);
+    return true;
+}
+
+void RomBrowserController::JoinPath(const TCHAR* dir, const char* fileName, TCHAR* path, u32 pathLength)
+{
+    StringUtil::Copy(path, dir, pathLength);
     int idx = strlcat(path, "/", pathLength);
-    if (path[idx - 2] == '/')
+    if (idx >= 2 && path[idx - 2] == '/')
     {
         path[idx - 1] = 0;
     }
     strlcat(path, fileName, pathLength);
-    return true;
+}
+
+bool RomBrowserController::IsFavorite(const FileInfo& fileInfo) const
+{
+    // Display-only check that runs on the UI thread every frame: it only reads
+    // the in-memory list and never touches the sd card.
+    if (!_favoritesStore.IsLoaded())
+    {
+        return false;
+    }
+    if (_virtualFolderKind != VirtualFolderKind::None)
+    {
+        return _favoritesStore.IndexOfFileName(fileInfo.GetFileName()) >= 0;
+    }
+    TCHAR path[256];
+    JoinPath(_currentRealPath, fileInfo.GetFileName(), path, sizeof(path) / sizeof(path[0]));
+    return _favoritesStore.Contains(path);
 }
 
 void RomBrowserController::ToggleFavorite(const FileInfo& fileInfo)
 {
+    if (_favoriteTogglePending)
+    {
+        // the previous toggle hasn't been written yet; ignore repeated presses
+        // (_favoriteToggleFileInfo must not change while the io task reads it)
+        return;
+    }
+    _favoriteTogglePending = true;
     _favoriteToggleFileInfo = FileInfo(fileInfo);
     _ioTaskQueue->Enqueue([this] (const vu8& cancelRequested)
     {
         TCHAR path[256];
-        if (ResolveItemFullPath(_favoriteToggleFileInfo.GetFileName(), path,
-                sizeof(path) / sizeof(path[0])))
+        if (ResolveItemFullPath(_favoriteToggleFileInfo.GetFileName(),
+                _favoriteToggleFileInfo.GetFastFileRef().GetStartCluster(),
+                path, sizeof(path) / sizeof(path[0])))
         {
             _favoritesStore.Toggle(path);
         }
+        _favoriteTogglePending = false;
         return TaskResult<void>::Completed();
     });
     if (_virtualFolderKind == VirtualFolderKind::Favorites)

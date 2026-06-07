@@ -10,12 +10,18 @@
 
 void PathListStore::Load()
 {
-    if (_loaded)
+    if (_loadStarted)
         return;
-    _loaded = true;
+    _loadStarted = true;
     _paths = std::make_unique<char[]>(_maxEntries * kPathLength);
     _count = 0;
+    ReadFromFile();
+    // set last so UI thread readers gated on IsLoaded() never see a partial list
+    _loaded = true;
+}
 
+void PathListStore::ReadFromFile()
+{
     const auto file = std::make_unique<File>();
     if (file->Open(_filePath, FA_READ | FA_OPEN_EXISTING) != FR_OK)
         return;
@@ -79,11 +85,11 @@ int PathListStore::IndexOf(const char* path) const
     return -1;
 }
 
-int PathListStore::IndexOfFileName(const char* fileName) const
+int PathListStore::IndexOfFileName(const char* fileName, int fromIndex) const
 {
     if (!fileName)
         return -1;
-    for (int i = 0; i < _count; i++)
+    for (int i = fromIndex; i < _count; i++)
     {
         const char* entry = &_paths[i * kPathLength];
         const char* slash = strrchr(entry, '/');

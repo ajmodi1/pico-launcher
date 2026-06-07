@@ -56,6 +56,7 @@ virtual void CycleTheme(int direction) = 0;
 
 virtual VirtualFolderKind GetVirtualFolderKind() const = 0;
 virtual void ToggleFavorite(const FileInfo& fileInfo) = 0;
+virtual bool IsFavorite(const FileInfo& fileInfo) const = 0;
 };
 
 inline IRomBrowserController::~IRomBrowserController() { }

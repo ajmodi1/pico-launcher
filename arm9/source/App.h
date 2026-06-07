@@ -25,7 +25,6 @@
 #include "romBrowser/views/RomBrowserBottomScreenView.h"
 #include "romBrowser/views/RomBrowserTopScreenView.h"
 #include "romBrowser/views/IconButton2DView.h"
-#include "romBrowser/views/ChipView.h"
 #include "romBrowser/Theme/Material/MaterialThemeFileIconFactory.h"
 #include "romBrowser/RomBrowserController.h"
 #include "DialogPresenter.h"
@@ -103,7 +102,6 @@ private:
     VramState _vramStateAfterMakeBottomScreenView;
     bool _changeDisplayMode = false;
 
-    ChipView::VramToken _chipViewVram;
     IconButton2DView::VramToken _iconButtonViewVram;
 
     bool _vcountIrqStarted = false;

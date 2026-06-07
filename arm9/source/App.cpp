@@ -15,11 +15,9 @@
 #include "core/math/ColorConverter.h"
 #include "core/math/RgbMixer.h"
 #include "gui/GraphicsContext.h"
-#include "romBrowser/views/ChipView.h"
 #include "picoLoaderBootstrap.h"
 #include "romBrowser/DisplayMode/RomBrowserDisplayModeFactory.h"
 #include "romBrowser/Theme/Material/MaterialThemeFileIconFactory.h"
-#include "romBrowser/views/NdsGameDetailsBottomSheetView.h"
 #include "romBrowser/views/cheats/CheatsBottomSheetView.h"
 #include "romBrowser/views/DisplaySettingsBottomSheetView.h"
 #include "romBrowser/views/SearchBottomSheetView.h"
@@ -120,7 +118,6 @@ void App::Run()
     DisplaySplashScreen();
     gx_init();
 
-    _chipViewVram = ChipView::UploadGraphics(_mainObjVram);
     _iconButtonViewVram = IconButton2DView::UploadGraphics(_mainObjVram);
 
     mem_setVramEMapping(MEM_VRAM_E_LCDC);
@@ -308,11 +305,6 @@ void App::HandleTrigger(RomBrowserStateTrigger trigger, RomBrowserState newState
 
 void App::HandleShowGameInfoTrigger()
 {
-    // auto gameInfoDialog = std::make_unique<NdsGameDetailsBottomSheetView>(
-    //     &_romBrowserController, &_theme->GetMaterialColorScheme(), _theme->GetFontRepository());
-    // gameInfoDialog->SetGraphics(_chipViewVram);
-    // _dialogPresenter.ShowDialog(std::move(gameInfoDialog));
-
     auto cheatsViewModel = SharedPtr<CheatsViewModel>::MakeShared(_romBrowserController.GetTriggerFileInfo(), &_romBrowserController);
     auto cheatsDialog = CheatsBottomSheetView::CreateShared(
         std::move(cheatsViewModel), &_theme->GetMaterialColorScheme(), _theme->GetFontRepository(), &_focusManager);

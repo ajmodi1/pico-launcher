@@ -45,8 +45,7 @@ TaskResult<void> BannerListFileRecyclerAdapter::BindView(SharedPtr<View> view, i
     auto icon = internalFileInfo ? internalFileInfo->CreateGameIcon() : nullptr;
     if (!icon)
     {
-        icon = fileInfo.GetFileType()->CreateFileIcon("", _themeFileIconFactory);
-    }
+        icon = fileInfo.GetFileType()->CreateFileIcon(fileInfo.GetFileName(), _themeFileIconFactory);    }
     if (icon != nullptr)
     {
         if (cancelRequested)

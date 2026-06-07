@@ -113,6 +113,12 @@ bool RomBrowserBottomScreenView::HandleInput(const InputProvider& inputProvider,
         _viewModel->NavigateUp();
         return true;
     }
+    if (inputProvider.Triggered(InputKey::Start) && _viewModel->IsRomBrowserVisible())
+    {
+        // open the search keyboard for the current folder
+        _viewModel->ShowSearch();
+        return true;
+    }
     if (inputProvider.Triggered(InputKey::X) && _viewModel->IsRomBrowserVisible())
     {
         // jump to a random game in the current folder

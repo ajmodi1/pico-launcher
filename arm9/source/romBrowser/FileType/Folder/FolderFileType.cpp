@@ -8,18 +8,23 @@ const FolderFileType FolderFileType::sInstance;
 std::unique_ptr<FileIcon> FolderFileType::CreateFileIcon(const TCHAR* fileName,
     const IThemeFileIconFactory* themeFileIconFactory) const
 {
-    // Try to load a custom folder icon from /_pico/icons/<folderName>.bmp
+        // Try to load a custom folder icon from /_pico/icons/<folderName>.bmp
     if (fileName && fileName[0])
-    {
+{
         char path[280];
         int length = snprintf(path, sizeof(path), "/_pico/icons/%s.bmp", fileName);
         if (length > 0 && length < (int)sizeof(path))
-        {
+{
             auto icon = BmpFileIcon::TryCreateFromPath(path);
             if (icon)
-                return icon;
-        }
-    }
+                                return icon;
+}
+
+        // Fall back to a user-provided default folder icon
+        auto defaultIcon = BmpFileIcon::TryCreateFromPath("/_pico/icons/_default.bmp");
+        if (defaultIcon)
+                        return defaultIcon;
+}
 
     return themeFileIconFactory ? themeFileIconFactory->CreateFolderIcon(fileName) : nullptr;
 }

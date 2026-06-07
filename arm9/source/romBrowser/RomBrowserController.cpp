@@ -248,6 +248,10 @@ break;
 }
 int nextIdx = (currentIdx + direction + count) % count;
 _appSettingsService->GetAppSettings().theme = &names[nextIdx * kNameLength];
+    // remember the folder currently being browsed so the relaunch returns here
+    TCHAR currentPath[256];
+    f_getcwd(currentPath, sizeof(currentPath) / sizeof(currentPath[0]));
+    _appSettingsService->GetAppSettings().lastUsedFilePath = currentPath;
 _appSettingsService->Save();
 // relaunch the launcher to apply the new theme
 auto loadParams = pload_getLoadParams();

@@ -6,7 +6,7 @@
 #include "FileType/InternalFileInfo.h"
 #include "SdFolderFactory.h"
 #include "CoverRepository.h"
- 
+
 void CoverRepository::Initialize()
 {
     NullFileTypeProvider fileTypeProvider;
@@ -26,13 +26,13 @@ void CoverRepository::Initialize()
         _userCoversFolder->SortByNameInPlace();
     }
 }
- 
+
 FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const InternalFileInfo* internalFileInfo) const
 {
     char nameBuffer[256];
     const auto& fileType = fileInfo.GetFileType();
     const FileInfo* coverFile = nullptr;
- 
+
     // Try to get a cover based on the filename in the user folder.
     // This also applies to folders, so that folders can be given custom covers.
     if (_userCoversFolder)
@@ -45,7 +45,7 @@ FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const Inte
         nameBuffer[length + 4] = 0;
         coverFile = _userCoversFolder->BinarySearch(nameBuffer);
     }
- 
+
     if (fileType->GetClassification() != FileTypeClassification::Folder)
     {
         // Try to get a cover based on an internal game code
@@ -64,16 +64,16 @@ FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const Inte
                     nameBuffer[length + 3] = 'p';
                     nameBuffer[length + 4] = 0;
                 }
- 
+
                 coverFile = coverFolder->BinarySearch(nameBuffer);
             }
         }
- 
+
         if (coverFile)
         {
             return new BmpFileCover(coverFile->GetFastFileRef());
         }
- 
+
         if (!coverFile && internalFileInfo)
         {
             auto cover = internalFileInfo->CreateGameCover();
@@ -87,10 +87,10 @@ FileCover* CoverRepository::GetCoverForFile(const FileInfo& fileInfo, const Inte
     {
         return new BmpFileCover(coverFile->GetFastFileRef());
     }
- 
+
     return fileType->CreateFileCover(fileInfo.GetFileName());
 }
- 
+
 const SdFolder* CoverRepository::GetCoverFolder(const char* coverFolderName) const
 {
     if (!strcmp(coverFolderName, "nds"))
@@ -106,4 +106,3 @@ const SdFolder* CoverRepository::GetCoverFolder(const char* coverFolderName) con
         return nullptr;
     }
 }
- 

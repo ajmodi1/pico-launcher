@@ -1,5 +1,6 @@
 #include "common.h"
 #include <vector>
+#include <string.h>
 #include "fat/Directory.h"
 #include "FileInfo.h"
 #include "FileType/Folder/FolderFileType.h"
